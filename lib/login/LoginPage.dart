@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
-import 'RegisterPage.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginPage extends StatelessWidget {
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: GestureDetector(
         onTap: () {
-          FocusScope.of(context).unfocus(); // Menutup keyboard jika area lain disentuh
+          FocusScope.of(context)
+              .unfocus(); // Menutup keyboard jika area lain disentuh
         },
         child: SingleChildScrollView(
           child: Padding(
@@ -17,12 +20,12 @@ class LoginPage extends StatelessWidget {
               children: [
                 const SizedBox(height: 50),
                 Image.asset(
-                  'assets/login_img.png',
+                  'assets/login_img.png', // Ganti dengan path gambar Anda
                   height: 200,
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  'Selamat Datang!',
+                  'Selamat Datang Kembali!',
                   style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.bold,
@@ -31,7 +34,7 @@ class LoginPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Sign In untuk melanjutkan',
+                  'Masuk untuk melanjutkan',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w100,
@@ -42,7 +45,7 @@ class LoginPage extends StatelessWidget {
                 TextField(
                   autofocus: false,
                   decoration: InputDecoration(
-                    labelText: 'Username',
+                    labelText: 'Email',
                     filled: true,
                     fillColor: Color.fromARGB(255, 223, 223, 223),
                     border: OutlineInputBorder(
@@ -72,13 +75,14 @@ class LoginPage extends StatelessWidget {
                   },
                   style: ElevatedButton.styleFrom(
                     primary: Colors.green,
-                    padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 15),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 100, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                     ),
                   ),
                   child: const Text(
-                    'Log In',
+                    'Login',
                     style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ),
@@ -92,13 +96,10 @@ class LoginPage extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => RegisterPage()),
-                        );
+                        Navigator.pop(context); // Kembali ke halaman register
                       },
                       child: const Text(
-                        'Register',
+                        'Daftar',
                         style: TextStyle(fontSize: 14, color: Colors.green),
                       ),
                     ),

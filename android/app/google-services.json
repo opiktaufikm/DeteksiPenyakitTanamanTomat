@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1079893206558",
+    "project_id": "deteksi-penyakit-tanaman-tomat",
+    "storage_bucket": "deteksi-penyakit-tanaman-tomat.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1079893206558:android:1b008064fd359259dc700f",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBz48NrFN5gf2OuROaXzKCKXU9PEmCJhIE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

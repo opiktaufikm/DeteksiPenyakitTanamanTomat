@@ -1,12 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application_2/firebase_options.dart';
+import 'package:flutterfire_core/flutterfire_core.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RegisterPage extends StatelessWidget {
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  FirebaseFirestore db = FirebaseFirestore.instance;
+
+  Future<void> createData(BuildContext context, String email, String password,
+      String username) async {
+    try {
+      DocumentReference docRef =
+          FirebaseFirestore.instance.collection('Data Pengguna').doc(username);
+
+      Map<String, dynamic> data = {
+        'email': email,
+        'password': password,
+        'username': username,
+      };
+
+      await docRef.set(data);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Data berhasil ditambahkan!")),
+      );
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal: \$error")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: GestureDetector(
         onTap: () {
-          FocusScope.of(context).unfocus(); // Menutup keyboard jika area lain disentuh
+          FocusScope.of(context).unfocus();
         },
         child: SingleChildScrollView(
           child: Padding(
@@ -16,7 +49,7 @@ class RegisterPage extends StatelessWidget {
               children: [
                 const SizedBox(height: 50),
                 Image.asset(
-                  'assets/sign_img.png', // Ganti dengan path gambar Anda
+                  'assets/sign_img.png',
                   height: 200,
                 ),
                 const SizedBox(height: 20),
@@ -39,7 +72,7 @@ class RegisterPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
                 TextField(
-                  autofocus: false,
+                  controller: usernameController,
                   decoration: InputDecoration(
                     labelText: 'Username',
                     filled: true,
@@ -52,7 +85,7 @@ class RegisterPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 TextField(
-                  autofocus: false,
+                  controller: emailController,
                   decoration: InputDecoration(
                     labelText: 'Email',
                     filled: true,
@@ -65,7 +98,7 @@ class RegisterPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 TextField(
-                  autofocus: false,
+                  controller: passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: 'Password',
@@ -80,11 +113,23 @@ class RegisterPage extends StatelessWidget {
                 const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: () {
-                    // Tambahkan logika register
+                    String username = usernameController.text.trim();
+                    String email = emailController.text.trim();
+                    String password = passwordController.text.trim();
+                    if (username.isNotEmpty &&
+                        email.isNotEmpty &&
+                        password.isNotEmpty) {
+                      createData(context, email, password, username);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Semua bidang harus diisi!")),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
-                    primary: Colors.green,
-                    padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 15),
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 100, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                     ),
@@ -104,7 +149,7 @@ class RegisterPage extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () {
-                        Navigator.pop(context); // Kembali ke halaman login
+                        Navigator.pop(context);
                       },
                       child: const Text(
                         'Log In',
