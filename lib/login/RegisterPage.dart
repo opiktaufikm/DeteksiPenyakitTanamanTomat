@@ -1,38 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_application_2/firebase_options.dart';
-import 'package:flutterfire_core/flutterfire_core.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application_2/login/LoginPage.dart';
+import 'package:flutter_application_2/home/HomePage.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+}
 
 class RegisterPage extends StatelessWidget {
-  final TextEditingController usernameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  FirebaseFirestore db = FirebaseFirestore.instance;
-
-  Future<void> createData(BuildContext context, String email, String password,
-      String username) async {
-    try {
-      DocumentReference docRef =
-          FirebaseFirestore.instance.collection('Data Pengguna').doc(username);
-
-      Map<String, dynamic> data = {
-        'email': email,
-        'password': password,
-        'username': username,
-      };
-
-      await docRef.set(data);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Data berhasil ditambahkan!")),
-      );
-    } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Gagal: \$error")),
-      );
-    }
-  }
+  final usernameController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -50,11 +30,11 @@ class RegisterPage extends StatelessWidget {
                 const SizedBox(height: 50),
                 Image.asset(
                   'assets/sign_img.png',
-                  height: 200,
+                  height: 270,
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  'Buat Akun Baru!',
+                  'Buat Akun Baru',
                   style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.bold,
@@ -73,6 +53,7 @@ class RegisterPage extends StatelessWidget {
                 const SizedBox(height: 30),
                 TextField(
                   controller: usernameController,
+                  autofocus: false,
                   decoration: InputDecoration(
                     labelText: 'Username',
                     filled: true,
@@ -86,6 +67,7 @@ class RegisterPage extends StatelessWidget {
                 const SizedBox(height: 16),
                 TextField(
                   controller: emailController,
+                  autofocus: false,
                   decoration: InputDecoration(
                     labelText: 'Email',
                     filled: true,
@@ -99,6 +81,7 @@ class RegisterPage extends StatelessWidget {
                 const SizedBox(height: 16),
                 TextField(
                   controller: passwordController,
+                  autofocus: false,
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: 'Password',
@@ -112,17 +95,49 @@ class RegisterPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     String username = usernameController.text.trim();
                     String email = emailController.text.trim();
                     String password = passwordController.text.trim();
+
                     if (username.isNotEmpty &&
                         email.isNotEmpty &&
                         password.isNotEmpty) {
-                      createData(context, email, password, username);
+                      DocumentReference docRef = FirebaseFirestore.instance
+                          .collection('client')
+                          .doc(username);
+
+                      DocumentSnapshot docSnapshot = await docRef.get();
+
+                      if (docSnapshot.exists) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(
+                                  "Username telah digunakan, pilih username lain.")),
+                        );
+                      } else {
+                        await docRef.set({
+                          'username': username,
+                          'email': email,
+                          'password': password,
+                        }).then((value) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HomePage(),
+                            ),
+                          );
+                        }).catchError((error) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text(
+                                    "Gagal mendaftarkan pengguna: $error")),
+                          );
+                        });
+                      }
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Semua bidang harus diisi!")),
+                        SnackBar(content: Text("Semua field harus diisi.")),
                       );
                     }
                   },
@@ -135,7 +150,7 @@ class RegisterPage extends StatelessWidget {
                     ),
                   ),
                   child: const Text(
-                    'Register',
+                    'Daftar',
                     style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ),
@@ -149,10 +164,15 @@ class RegisterPage extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () {
-                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => LoginPage(),
+                          ),
+                        );
                       },
                       child: const Text(
-                        'Log In',
+                        'Masuk',
                         style: TextStyle(fontSize: 14, color: Colors.green),
                       ),
                     ),

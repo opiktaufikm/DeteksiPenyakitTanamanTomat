@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application_2/home/HomePage.dart';
+import 'package:flutter_application_2/login/RegisterPage.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+}
 
 class LoginPage extends StatelessWidget {
- 
+  final usernameController = TextEditingController();
+  final passwordController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: GestureDetector(
         onTap: () {
-          FocusScope.of(context)
-              .unfocus(); // Menutup keyboard jika area lain disentuh
+          FocusScope.of(context).unfocus();
         },
         child: SingleChildScrollView(
           child: Padding(
@@ -20,8 +28,8 @@ class LoginPage extends StatelessWidget {
               children: [
                 const SizedBox(height: 50),
                 Image.asset(
-                  'assets/login_img.png', // Ganti dengan path gambar Anda
-                  height: 200,
+                  'assets/login_img.png',
+                  height: 270,
                 ),
                 const SizedBox(height: 20),
                 const Text(
@@ -43,9 +51,9 @@ class LoginPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
                 TextField(
-                  autofocus: false,
+                  controller: usernameController,
                   decoration: InputDecoration(
-                    labelText: 'Email',
+                    labelText: 'Username',
                     filled: true,
                     fillColor: Color.fromARGB(255, 223, 223, 223),
                     border: OutlineInputBorder(
@@ -56,7 +64,7 @@ class LoginPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 TextField(
-                  autofocus: false,
+                  controller: passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: 'Password',
@@ -70,11 +78,33 @@ class LoginPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
                 ElevatedButton(
-                  onPressed: () {
-                    // Tambahkan logika login
+                  onPressed: () async {
+                    String username = usernameController.text;
+                    String password = passwordController.text;
+
+                    if (username.isNotEmpty && password.isNotEmpty) {
+                      QuerySnapshot snapshot = await FirebaseFirestore.instance
+                          .collection('client')
+                          .where('username', isEqualTo: username)
+                          .where('password', isEqualTo: password)
+                          .get();
+
+                      if (snapshot.docs.isNotEmpty) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => HomePage(),
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Username atau password salah.')),
+                        );
+                      }
+                    }
                   },
                   style: ElevatedButton.styleFrom(
-                    primary: Colors.green,
+                    backgroundColor: Colors.green,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 100, vertical: 15),
                     shape: RoundedRectangleBorder(
@@ -96,7 +126,12 @@ class LoginPage extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () {
-                        Navigator.pop(context); // Kembali ke halaman register
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => RegisterPage(),
+                          ),
+                        );
                       },
                       child: const Text(
                         'Daftar',

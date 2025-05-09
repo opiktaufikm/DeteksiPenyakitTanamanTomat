@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'ProfilePage.dart'; // Ensure this file exists in the same directory or update the path accordingly
+import 'ProfilePage.dart'; 
 import 'AboutMePage.dart';
+import 'package:flutter_application_2/login/LoginPage.dart';
+
 class AccountPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -92,7 +94,13 @@ class AccountPage extends StatelessWidget {
             context,
             title: 'Logout',
             onTap: () {
-              // Tambahkan logika untuk logout
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => LoginPage(), // Ganti dengan halaman login Anda
+                  transitionDuration: const Duration(milliseconds: 260), // Durasi animasi lebih cepat
+                ),
+              );
             },
             textColor: Colors.red,
             icon: Icons.logout,
