@@ -32,7 +32,7 @@ class AboutMePage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: const [
                 Text(
-                  'Deteksi Penyakit Tanaman',
+                  'Tugas Pemrograman Aplikasi Bergerak',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

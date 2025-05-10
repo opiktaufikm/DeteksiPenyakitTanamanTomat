@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'ProfilePage.dart'; 
 import 'AboutMePage.dart';
-import 'package:flutter_application_2/login/LoginPage.dart';
+import 'package:flutter_application_2/auth/LoginPage.dart';
 
 class AccountPage extends StatelessWidget {
   @override

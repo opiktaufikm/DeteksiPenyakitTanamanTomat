@@ -14,6 +14,7 @@ class _ScanPageState extends State<ScanPage> {
   File? _imageFile;
   List? _hasilPred;
   DataTreat dt = DataTreat();
+  DataObat dob = DataObat();
 
   @override
   void initState() {
@@ -198,6 +199,19 @@ class _ScanPageState extends State<ScanPage> {
                                     dt.treatment[_hasilPred![0]['index']],
                                     style: const TextStyle(fontSize: 16),
                                   ),
+                                  const SizedBox(height: 16),
+                                  const Text(
+                                    'Obat:',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    dob.obat[_hasilPred![0]['index']],
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                  const SizedBox(height: 16),
                                 ],
                               ),
                             )

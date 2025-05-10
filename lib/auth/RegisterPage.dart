@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application_2/auth/LoginPage.dart';
 import 'package:flutter_application_2/home/HomePage.dart';
-import 'package:flutter_application_2/login/RegisterPage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 }
 
-class LoginPage extends StatelessWidget {
+class RegisterPage extends StatelessWidget {
   final usernameController = TextEditingController();
+  final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
   @override
@@ -28,12 +29,12 @@ class LoginPage extends StatelessWidget {
               children: [
                 const SizedBox(height: 50),
                 Image.asset(
-                  'assets/login_img.png',
+                  'assets/sign_img.png',
                   height: 270,
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  'Selamat Datang Kembali!',
+                  'Buat Akun Baru',
                   style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.bold,
@@ -42,7 +43,7 @@ class LoginPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Masuk untuk melanjutkan',
+                  'Daftar untuk melanjutkan',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w100,
@@ -52,6 +53,7 @@ class LoginPage extends StatelessWidget {
                 const SizedBox(height: 30),
                 TextField(
                   controller: usernameController,
+                  autofocus: false,
                   decoration: InputDecoration(
                     labelText: 'Username',
                     filled: true,
@@ -64,7 +66,22 @@ class LoginPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 TextField(
+                  controller: emailController,
+                  autofocus: false,
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    filled: true,
+                    fillColor: Color.fromARGB(255, 223, 223, 223),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
                   controller: passwordController,
+                  autofocus: false,
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: 'Password',
@@ -79,28 +96,49 @@ class LoginPage extends StatelessWidget {
                 const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: () async {
-                    String username = usernameController.text;
-                    String password = passwordController.text;
+                    String username = usernameController.text.trim();
+                    String email = emailController.text.trim();
+                    String password = passwordController.text.trim();
 
-                    if (username.isNotEmpty && password.isNotEmpty) {
-                      QuerySnapshot snapshot = await FirebaseFirestore.instance
+                    if (username.isNotEmpty &&
+                        email.isNotEmpty &&
+                        password.isNotEmpty) {
+                      DocumentReference docRef = FirebaseFirestore.instance
                           .collection('client')
-                          .where('username', isEqualTo: username)
-                          .where('password', isEqualTo: password)
-                          .get();
+                          .doc(username);
 
-                      if (snapshot.docs.isNotEmpty) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => HomePage(),
-                          ),
+                      DocumentSnapshot docSnapshot = await docRef.get();
+
+                      if (docSnapshot.exists) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(
+                                  "Username telah digunakan, pilih username lain.")),
                         );
                       } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Username atau password salah.')),
-                        );
+                        await docRef.set({
+                          'username': username,
+                          'email': email,
+                          'password': password,
+                        }).then((value) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HomePage(),
+                            ),
+                          );
+                        }).catchError((error) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text(
+                                    "Gagal mendaftarkan pengguna: $error")),
+                          );
+                        });
                       }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Semua field harus diisi.")),
+                      );
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -112,7 +150,7 @@ class LoginPage extends StatelessWidget {
                     ),
                   ),
                   child: const Text(
-                    'Login',
+                    'Daftar',
                     style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ),
@@ -121,7 +159,7 @@ class LoginPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      'Belum punya akun?',
+                      'Sudah punya akun?',
                       style: TextStyle(fontSize: 14, color: Colors.black),
                     ),
                     TextButton(
@@ -129,12 +167,12 @@ class LoginPage extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => RegisterPage(),
+                            builder: (context) => LoginPage(),
                           ),
                         );
                       },
                       child: const Text(
-                        'Daftar',
+                        'Masuk',
                         style: TextStyle(fontSize: 14, color: Colors.green),
                       ),
                     ),

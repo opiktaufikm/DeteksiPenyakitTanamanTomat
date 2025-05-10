@@ -25,6 +25,7 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.green,
         elevation: 0,
         foregroundColor: Colors.white,
+        automaticallyImplyLeading: false, // Menghilangkan ikon backward
       ),
       body: _pages[_currentIndex], // Menampilkan konten sesuai tab yang dipilih
       bottomNavigationBar: BottomNavigationBar(
@@ -176,8 +177,8 @@ class HomeContent extends StatelessWidget {
                                 opacity: fadeAnimation,
                                 child: SlideTransition(
                                   position: Tween<Offset>(
-                                  begin: const Offset(0.0, 1.0), // Start from bottom
-                                  end: Offset.zero, // End at original position
+                                  begin: const Offset(0.0, 1.0),
+                                  end: Offset.zero,
                                   ).animate(animation),
                                   child: child,
                                 ),
