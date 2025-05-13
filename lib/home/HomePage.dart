@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/account/AccountPage.dart';
-import 'package:flutter_application_2/scan/ScanPage.dart'; // Ensure this file exists and contains the ScanPage2 class
+import 'package:flutter_application_2/scan/ScanPage.dart'; 
+import 'package:flutter_application_2/viewData/dataClient.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -12,7 +13,7 @@ class _HomePageState extends State<HomePage> {
 
   final List<Widget> _pages = [
     HomeContent(), // Konten Home
-    Center(child: Text('Chat Page')), // Placeholder untuk Chat
+    DataClient(), // Konten Data Client
     AccountPage(), // Konten Account
   ];
 
@@ -25,7 +26,7 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.green,
         elevation: 0,
         foregroundColor: Colors.white,
-        automaticallyImplyLeading: false, // Menghilangkan ikon backward
+        automaticallyImplyLeading: false, 
       ),
       body: _pages[_currentIndex], // Menampilkan konten sesuai tab yang dipilih
       bottomNavigationBar: BottomNavigationBar(

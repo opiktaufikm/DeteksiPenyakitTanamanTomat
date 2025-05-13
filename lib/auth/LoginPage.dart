@@ -3,15 +3,17 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application_2/home/HomePage.dart';
 import 'package:flutter_application_2/auth/RegisterPage.dart';
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-}
+import 'package:flutter_application_2/account/ProfilePage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatelessWidget {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
+
+  Future<void> _saveUserId(String userId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('userId', userId);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,22 +42,13 @@ class LoginPage extends StatelessWidget {
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Masuk untuk melanjutkan',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w100,
-                    color: Colors.grey,
-                  ),
-                ),
                 const SizedBox(height: 30),
                 TextField(
                   controller: usernameController,
                   decoration: InputDecoration(
                     labelText: 'Username',
                     filled: true,
-                    fillColor: Color.fromARGB(255, 223, 223, 223),
+                    fillColor: const Color.fromARGB(255, 223, 223, 223),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide.none,
@@ -69,7 +62,7 @@ class LoginPage extends StatelessWidget {
                   decoration: InputDecoration(
                     labelText: 'Password',
                     filled: true,
-                    fillColor: Color.fromARGB(255, 223, 223, 223),
+                    fillColor: const Color.fromARGB(255, 223, 223, 223),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide.none,
@@ -79,8 +72,8 @@ class LoginPage extends StatelessWidget {
                 const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: () async {
-                    String username = usernameController.text;
-                    String password = passwordController.text;
+                    String username = usernameController.text.trim();
+                    String password = passwordController.text.trim();
 
                     if (username.isNotEmpty && password.isNotEmpty) {
                       QuerySnapshot snapshot = await FirebaseFirestore.instance
@@ -90,6 +83,11 @@ class LoginPage extends StatelessWidget {
                           .get();
 
                       if (snapshot.docs.isNotEmpty) {
+                        String userId = snapshot.docs.first.id;
+
+                        // Simpan userId ke SharedPreferences
+                        await _saveUserId(userId);
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -98,15 +96,22 @@ class LoginPage extends StatelessWidget {
                         );
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Username atau password salah.')),
+                          const SnackBar(
+                            content: Text('Username atau password salah.'),
+                          ),
                         );
                       }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Username dan password tidak boleh kosong.'),
+                        ),
+                      );
                     }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 100, vertical: 15),
+                    padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                     ),
@@ -116,7 +121,7 @@ class LoginPage extends StatelessWidget {
                     style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
