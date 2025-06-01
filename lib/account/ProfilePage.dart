@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -10,10 +9,9 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String _userId = "";
-  TextEditingController _nameController = TextEditingController();
-  TextEditingController _emailController = TextEditingController();
-  TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  String _email = '';
   bool _isEditing = false;
 
   @override
@@ -22,49 +20,44 @@ class _ProfilePageState extends State<ProfilePage> {
     _loadUserData();
   }
 
-  Future<void> _loadUserData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userId = prefs.getString('userId');
+  void _loadUserData() {
+    final user = Supabase.instance.client.auth.currentUser;
 
-    if (userId != null) {
-      setState(() {
-        _userId = userId;
-      });
-
-      DocumentSnapshot userDoc =
-          await FirebaseFirestore.instance.collection('client').doc(userId).get();
-
-      if (userDoc.exists) {
-        setState(() {
-          _nameController.text = userDoc['username'] ?? "";
-          _emailController.text = userDoc['email'] ?? "";
-          _passwordController.text = userDoc['password'] ?? "";
-        });
-      }
+    if (user != null) {
+      _email = user.email ?? '';
+      _nameController.text = user.userMetadata?['full_name'] ?? '';
     }
   }
 
   Future<void> _updateUserData() async {
-    if (_userId.isNotEmpty) {
-      try {
-        await FirebaseFirestore.instance.collection('client').doc(_userId).update({
-          'username': _nameController.text.trim(),
-          'email': _emailController.text.trim(),
-          'password': _passwordController.text.trim(),
-        });
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
 
-        setState(() {
-          _isEditing = false;
-        });
+    try {
+      final updates = UserAttributes();
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Data berhasil diperbarui')),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal memperbarui data: $e')),
-        );
+      if (_passwordController.text.trim().isNotEmpty) {
+        updates.password = _passwordController.text.trim();
       }
+
+      if (_nameController.text.trim().isNotEmpty) {
+        updates.data = {'full_name': _nameController.text.trim()};
+      }
+
+      await Supabase.instance.client.auth.updateUser(updates);
+
+      setState(() {
+        _isEditing = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profil berhasil diperbarui')),
+      );
+    } catch (e) {
+      print('Error updating profile: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memperbarui profil: ${e.toString()}')),
+      );
     }
   }
 
@@ -72,7 +65,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Data Pribadi'),
+        title: const Text('Profil Saya'),
         centerTitle: true,
         backgroundColor: const Color.fromARGB(255, 250, 250, 250),
         elevation: 0,
@@ -98,28 +91,14 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text('E-mail', style: TextStyle(fontSize: 16)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _emailController,
-              enabled: _isEditing,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: _isEditing ? Colors.white : Colors.grey[300],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text('Password', style: TextStyle(fontSize: 16)),
+            const Text('Password (baru)', style: TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
             TextField(
               controller: _passwordController,
               enabled: _isEditing,
               obscureText: true,
               decoration: InputDecoration(
+                hintText: _isEditing ? 'Isi jika ingin mengganti password' : '',
                 filled: true,
                 fillColor: _isEditing ? Colors.white : Colors.grey[300],
                 border: OutlineInputBorder(

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application_2/auth/LoginPage.dart';
 import 'package:flutter_application_2/home/HomePage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterPage extends StatelessWidget {
   final usernameController = TextEditingController();
@@ -15,13 +14,21 @@ class RegisterPage extends StatelessWidget {
     await prefs.setString('userId', userId);
   }
 
+  Future<bool> _isUsernameTaken(String username) async {
+    final response = await Supabase.instance.client
+        .from('profiles')
+        .select('username')
+        .eq('username', username)
+        .maybeSingle();
+
+    return response != null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: GestureDetector(
-        onTap: () {
-          FocusScope.of(context).unfocus();
-        },
+        onTap: () => FocusScope.of(context).unfocus(),
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -98,53 +105,57 @@ class RegisterPage extends StatelessWidget {
                     String email = emailController.text.trim();
                     String password = passwordController.text.trim();
 
-                    if (username.isNotEmpty && email.isNotEmpty && password.isNotEmpty) {
-                      DocumentReference docRef = FirebaseFirestore.instance
-                          .collection('client')
-                          .doc(username);
-
-                      DocumentSnapshot docSnapshot = await docRef.get();
-
-                      if (docSnapshot.exists) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Username telah digunakan, pilih username lain."),
-                          ),
+                    if (username.isNotEmpty &&
+                        email.isNotEmpty &&
+                        password.isNotEmpty) {
+                      try {
+                        // 1. Sign up dengan email & password
+                        final response =
+                            await Supabase.instance.client.auth.signUp(
+                          email: email,
+                          password: password,
                         );
-                      } else {
-                        try {
-                          // Simpan data pengguna baru
-                          await docRef.set({
-                            'username': username,
-                            'email': email,
-                            'password': password,
-                          });
 
-                          // Simpan userId ke SharedPreferences
-                          await _saveUserId(username);
-
-                          // Berpindah ke HomePage
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => HomePage(),
-                            ),
-                          );
-                        } catch (error) {
+                        final userId = response.user?.id;
+                        if (userId == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Gagal mendaftarkan pengguna: $error")),
+                            const SnackBar(
+                                content: Text("Gagal mendaftarkan pengguna.")),
                           );
+                          return;
                         }
+
+                        // 2. Sekarang update metadata agar Display name terisi
+                        await Supabase.instance.client.auth.updateUser(
+                          UserAttributes(data: {
+                            'full_name': username,
+                          }),
+                        );
+
+                        // 3. Simpan userId dan navigasi ke HomePage
+                        await _saveUserId(userId);
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => HomePage()),
+                        );
+                      } catch (error) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content:
+                                  Text("Gagal mendaftarkan pengguna: $error")),
+                        );
                       }
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Semua field harus diisi.")),
+                        const SnackBar(
+                            content: Text("Semua field harus diisi.")),
                       );
                     }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 15),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 100, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                     ),

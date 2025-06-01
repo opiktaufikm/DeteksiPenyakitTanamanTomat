@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/account/AccountPage.dart';
 import 'package:flutter_application_2/scan/ScanPage.dart'; 
-import 'package:flutter_application_2/viewData/dataClient.dart';
+import 'package:flutter_application_2/chat/PertanyaanPage.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -13,7 +13,7 @@ class _HomePageState extends State<HomePage> {
 
   final List<Widget> _pages = [
     HomeContent(), // Konten Home
-    DataClient(), // Konten Data Client
+    PertanyaanPage(), // Konten Data Client
     AccountPage(), // Konten Account
   ];
 

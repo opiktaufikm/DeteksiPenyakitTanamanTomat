@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application_2/home/HomePage.dart';
 import 'package:flutter_application_2/auth/RegisterPage.dart';
-import 'package:flutter_application_2/account/ProfilePage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginPage extends StatelessWidget {
-  final usernameController = TextEditingController();
+  final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
   Future<void> _saveUserId(String userId) async {
@@ -19,9 +17,7 @@ class LoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: GestureDetector(
-        onTap: () {
-          FocusScope.of(context).unfocus();
-        },
+        onTap: () => FocusScope.of(context).unfocus(),
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -44,9 +40,9 @@ class LoginPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
                 TextField(
-                  controller: usernameController,
+                  controller: emailController,
                   decoration: InputDecoration(
-                    labelText: 'Username',
+                    labelText: 'Email',
                     filled: true,
                     fillColor: const Color.fromARGB(255, 223, 223, 223),
                     border: OutlineInputBorder(
@@ -72,39 +68,36 @@ class LoginPage extends StatelessWidget {
                 const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: () async {
-                    String username = usernameController.text.trim();
+                    String email = emailController.text.trim();
                     String password = passwordController.text.trim();
 
-                    if (username.isNotEmpty && password.isNotEmpty) {
-                      QuerySnapshot snapshot = await FirebaseFirestore.instance
-                          .collection('client')
-                          .where('username', isEqualTo: username)
-                          .where('password', isEqualTo: password)
-                          .get();
+                    if (email.isNotEmpty && password.isNotEmpty) {
+                      try {
+                        final response = await Supabase.instance.client.auth
+                            .signInWithPassword(email: email, password: password);
 
-                      if (snapshot.docs.isNotEmpty) {
-                        String userId = snapshot.docs.first.id;
+                        final user = response.user;
 
-                        // Simpan userId ke SharedPreferences
-                        await _saveUserId(userId);
-
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => HomePage(),
-                          ),
-                        );
-                      } else {
+                        if (user != null) {
+                          await _saveUserId(user.id);
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => HomePage()),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Login gagal. Pengguna tidak ditemukan.')),
+                          );
+                        }
+                      } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Username atau password salah.'),
-                          ),
+                          SnackBar(content: Text('Login gagal: ${e.toString()}')),
                         );
                       }
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Username dan password tidak boleh kosong.'),
+                          content: Text('Email dan password tidak boleh kosong.'),
                         ),
                       );
                     }
