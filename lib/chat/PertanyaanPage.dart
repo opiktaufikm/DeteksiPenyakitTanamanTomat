@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'DetailPage.dart';
+import 'TambahPertanyaan.dart';
 
 class PertanyaanPage extends StatefulWidget {
   const PertanyaanPage({super.key});
@@ -15,86 +17,27 @@ class _PertanyaanPageState extends State<PertanyaanPage> {
   final supabase = Supabase.instance.client;
   File? _selectedImage;
 
-  void _showAddQuestionForm() {
-    final judulController = TextEditingController();
-    final detailController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Tambah Pertanyaan"),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(
-                controller: judulController,
-                decoration: const InputDecoration(labelText: "Judul"),
-              ),
-              TextField(
-                controller: detailController,
-                decoration: const InputDecoration(labelText: "Detail"),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 10),
-              _selectedImage != null
-                  ? Image.file(_selectedImage!, height: 100)
-                  : const Text("Belum ada gambar"),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.image),
-                label: const Text("Pilih Gambar"),
-                onPressed: _pickImage,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Batal"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final judul = judulController.text.trim();
-              final detail = detailController.text.trim();
-
-              if (judul.isEmpty || detail.isEmpty) return;
-
-              String imageUrl = '';
-              if (_selectedImage != null) {
-                final uuid = const Uuid().v4();
-                final path = 'pertanyaan/$uuid.jpg';
-                await supabase.storage
-                    .from('pertanyaan_images')
-                    .upload(path, _selectedImage!);
-                final urlResponse = supabase.storage
-                    .from('pertanyaan_images')
-                    .getPublicUrl(path);
-                imageUrl = urlResponse;
-              }
-
-              await supabase.from('pertanyaan').insert({
-                'judul': judul,
-                'detail': detail,
-                'gambar_url': imageUrl,
-              });
-
-              setState(() {
-                _selectedImage = null;
-              });
-
-              if (context.mounted) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text("Pertanyaan berhasil disimpan.")),
-                );
-              }
-            },
-            child: const Text("Simpan"),
-          ),
-        ],
+  void _bukaFormTambahPertanyaan() async {
+    final result = await Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const TambahPertanyaan(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(0.0, 1.0); // dari bawah
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+          final tween =
+              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          return SlideTransition(
+              position: animation.drive(tween), child: child);
+        },
       ),
     );
+
+    // Jika berhasil menambahkan pertanyaan, refresh
+    if (result == true) {
+      setState(() {}); // panggil fetchQuestions lagi
+    }
   }
 
   Future<void> _pickImage() async {
@@ -107,20 +50,56 @@ class _PertanyaanPageState extends State<PertanyaanPage> {
     }
   }
 
+  Future<List<Map<String, dynamic>>> fetchQuestions() async {
+    final response = await supabase
+        .from('pertanyaan')
+        .select('*')
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  void _navigateToDetailPage(Map<String, dynamic> item) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            DetailPage(item: item),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0); // dari kanan
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+
+          var tween =
+              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          final offsetAnimation = animation.drive(tween);
+
+          return SlideTransition(position: offsetAnimation, child: child);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: supabase
-            .from('pertanyaan')
-            .select('*')
-            .order('created_at', ascending: false)
-            .then((value) => value as List<Map<String, dynamic>>),
+        future: fetchQuestions(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData)
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
+          }
 
-          final data = snapshot.data!;
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Gagal memuat data: ${snapshot.error}'),
+            );
+          }
+
+          final data = snapshot.data ?? [];
+
+          if (data.isEmpty) {
+            return const Center(child: Text("Belum ada pertanyaan."));
+          }
+
           return ListView.builder(
             itemCount: data.length,
             itemBuilder: (context, index) {
@@ -128,14 +107,28 @@ class _PertanyaanPageState extends State<PertanyaanPage> {
               return Card(
                 margin: const EdgeInsets.all(12),
                 child: ListTile(
-                  leading:
-                      item['gambar_url'] != null && item['gambar_url'] != ''
-                          ? Image.network(item['gambar_url'],
-                              width: 50, height: 50, fit: BoxFit.cover)
-                          : const Icon(Icons.image),
-                  title: Text(item['judul'] ?? 'Tanpa Judul',
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(item['detail'] ?? ''),
+                  onTap: () => _navigateToDetailPage(item),
+                  leading: (item['gambar_url'] != null &&
+                          item['gambar_url'].toString().isNotEmpty)
+                      ? Image.network(item['gambar_url'],
+                          width: 50, height: 50, fit: BoxFit.cover)
+                      : const Icon(Icons.image),
+                  title: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      item['judul'] ?? 'Tanpa Judul',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.left,
+                    ),
+                  ),
+                  subtitle: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      item['detail'] ?? '',
+                      textAlign: TextAlign.left,
+                    ),
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios),
                 ),
               );
             },
@@ -145,7 +138,7 @@ class _PertanyaanPageState extends State<PertanyaanPage> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(right: 16.0, bottom: 16.0),
         child: FloatingActionButton(
-          onPressed: _showAddQuestionForm,
+          onPressed: _bukaFormTambahPertanyaan,
           backgroundColor: Colors.green,
           child: const Icon(Icons.add, color: Colors.white),
         ),
