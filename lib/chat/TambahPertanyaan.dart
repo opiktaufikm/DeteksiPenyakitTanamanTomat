@@ -36,9 +36,9 @@ class _TambahPertanyaanState extends State<TambahPertanyaan> {
     String imageUrl = '';
     if (_selectedImage != null) {
       final uuid = const Uuid().v4();
-      final path = '$uuid.jpg'; // tanpa folder "pertanyaan/"
+      final path = '$uuid.jpg';
       await supabase.storage
-          .from('pertanyaanimages') // sesuai nama bucket
+          .from('pertanyaanimages')
           .upload(path, _selectedImage!);
 
       imageUrl = supabase.storage.from('pertanyaanimages').getPublicUrl(path);
@@ -55,7 +55,7 @@ class _TambahPertanyaanState extends State<TambahPertanyaan> {
     });
 
     if (context.mounted) {
-      Navigator.pop(context, true); // kirim sinyal ke halaman sebelumnya
+      Navigator.pop(context, true);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Pertanyaan berhasil disimpan.")),
       );
@@ -66,6 +66,7 @@ class _TambahPertanyaanState extends State<TambahPertanyaan> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.green, // ✅ AppBar hijau
         title: const Text("Tambah Pertanyaan"),
       ),
       body: Padding(
@@ -75,31 +76,75 @@ class _TambahPertanyaanState extends State<TambahPertanyaan> {
             children: [
               TextField(
                 controller: judulController,
-                decoration: const InputDecoration(labelText: "Judul"),
+                decoration: InputDecoration(
+                  labelText: "Judul Pertanyaan",
+                  hintText: "Masukkan judul yang singkat dan jelas",
+                  prefixIcon: const Icon(Icons.title),
+                  labelStyle: const TextStyle(color: Colors.green),
+                  filled: true,
+                  fillColor: Colors.green[50],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.green),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.green, width: 2),
+                  ),
+                ),
               ),
+
+              const SizedBox(height: 16),
+
               TextField(
                 controller: detailController,
-                decoration: const InputDecoration(labelText: "Detail"),
-                maxLines: 3,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  labelText: "Detail Pertanyaan",
+                  hintText: "Jelaskan pertanyaan Anda secara lengkap...",
+                  prefixIcon: const Icon(Icons.description),
+                  labelStyle: const TextStyle(color: Colors.green),
+                  filled: true,
+                  fillColor: Colors.green[50],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.green),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.green, width: 2),
+                  ),
+                ),
               ),
               const SizedBox(height: 10),
               _selectedImage != null
                   ? Image.file(_selectedImage!, height: 100)
                   : const Text("Belum ada gambar"),
-              ElevatedButton.icon(
-                onPressed: _pickImage,
-                icon: const Icon(Icons.image),
-                label: const Text("Pilih Gambar"),
-              ),
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _simpanPertanyaan,
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12)),
-                child: const Text("Simpan"),
-              )
+
+              // ✅ Tombol sejajar
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _pickImage,
+                    icon: const Icon(Icons.image),
+                    label: const Text("Pilih Gambar"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[600],
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: _simpanPertanyaan,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                    ),
+                    child: const Text("Simpan"),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DetailPage extends StatelessWidget {
   final Map<String, dynamic> item;
@@ -6,8 +7,54 @@ class DetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final supabase = Supabase.instance.client;
+
+    Future<void> _hapusPertanyaan() async {
+      final konfirmasi = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Hapus Pertanyaan'),
+          content: const Text('Apakah Anda yakin ingin menghapus pertanyaan ini?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+      );
+
+      if (konfirmasi == true) {
+        await supabase
+            .from('pertanyaan')
+            .delete()
+            .eq('id', item['id']);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pertanyaan berhasil dihapus')),
+        );
+
+        Navigator.pop(context, true); // Kembali dan trigger refresh
+      }
+    }
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Detail Pertanyaan")),
+      appBar: AppBar(
+        title: const Text("Detail Pertanyaan"),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: _hapusPertanyaan,
+            tooltip: 'Hapus Pertanyaan',
+          )
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

@@ -17,13 +17,35 @@ class _PertanyaanPageState extends State<PertanyaanPage> {
   final supabase = Supabase.instance.client;
   File? _selectedImage;
 
+  List<Map<String, dynamic>> _pertanyaanList = [];
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPertanyaan();
+  }
+
+  Future<void> _loadPertanyaan() async {
+    setState(() => _loading = true);
+    final response = await supabase
+        .from('pertanyaan')
+        .select('*')
+        .order('created_at', ascending: false);
+
+    setState(() {
+      _pertanyaanList = List<Map<String, dynamic>>.from(response);
+      _loading = false;
+    });
+  }
+
   void _bukaFormTambahPertanyaan() async {
     final result = await Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
             const TambahPertanyaan(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0); // dari bawah
+          const begin = Offset(0.0, 1.0);
           const end = Offset.zero;
           const curve = Curves.easeInOut;
           final tween =
@@ -34,9 +56,8 @@ class _PertanyaanPageState extends State<PertanyaanPage> {
       ),
     );
 
-    // Jika berhasil menambahkan pertanyaan, refresh
     if (result == true) {
-      setState(() {}); // panggil fetchQuestions lagi
+      _loadPertanyaan(); // Refresh setelah menambah
     }
   }
 
@@ -50,91 +71,65 @@ class _PertanyaanPageState extends State<PertanyaanPage> {
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchQuestions() async {
-    final response = await supabase
-        .from('pertanyaan')
-        .select('*')
-        .order('created_at', ascending: false);
-    return List<Map<String, dynamic>>.from(response);
-  }
-
-  void _navigateToDetailPage(Map<String, dynamic> item) {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            DetailPage(item: item),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0); // dari kanan
-          const end = Offset.zero;
-          const curve = Curves.easeInOut;
-
-          var tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          final offsetAnimation = animation.drive(tween);
-
-          return SlideTransition(position: offsetAnimation, child: child);
-        },
-      ),
+  void _navigateToDetailPage(Map<String, dynamic> item) async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => DetailPage(item: item)),
     );
+
+    if (result == true) {
+      _loadPertanyaan(); // Refresh setelah delete
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: fetchQuestions(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(
-              child: Text('Gagal memuat data: ${snapshot.error}'),
-            );
-          }
-
-          final data = snapshot.data ?? [];
-
-          if (data.isEmpty) {
-            return const Center(child: Text("Belum ada pertanyaan."));
-          }
-
-          return ListView.builder(
-            itemCount: data.length,
-            itemBuilder: (context, index) {
-              final item = data[index];
-              return Card(
-                margin: const EdgeInsets.all(12),
-                child: ListTile(
-                  onTap: () => _navigateToDetailPage(item),
-                  leading: (item['gambar_url'] != null &&
-                          item['gambar_url'].toString().isNotEmpty)
-                      ? Image.network(item['gambar_url'],
-                          width: 50, height: 50, fit: BoxFit.cover)
-                      : const Icon(Icons.image),
-                  title: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      item['judul'] ?? 'Tanpa Judul',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.left,
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _loadPertanyaan,
+              child: _pertanyaanList.isEmpty
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 100),
+                        Center(child: Text("Belum ada pertanyaan.")),
+                      ],
+                    )
+                  : ListView.builder(
+                      itemCount: _pertanyaanList.length,
+                      itemBuilder: (context, index) {
+                        final item = _pertanyaanList[index];
+                        return Card(
+                          margin: const EdgeInsets.all(12),
+                          child: ListTile(
+                            onTap: () => _navigateToDetailPage(item),
+                            leading: (item['gambar_url'] != null &&
+                                    item['gambar_url'].toString().isNotEmpty)
+                                ? Image.network(item['gambar_url'],
+                                    width: 50, height: 50, fit: BoxFit.cover)
+                                : const Icon(Icons.image),
+                            title: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                item['judul'] ?? 'Tanpa Judul',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
+                                textAlign: TextAlign.left,
+                              ),
+                            ),
+                            subtitle: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                item['detail'] ?? '',
+                                textAlign: TextAlign.left,
+                              ),
+                            ),
+                            trailing: const Icon(Icons.arrow_forward_ios),
+                          ),
+                        );
+                      },
                     ),
-                  ),
-                  subtitle: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      item['detail'] ?? '',
-                      textAlign: TextAlign.left,
-                    ),
-                  ),
-                  trailing: const Icon(Icons.arrow_forward_ios),
-                ),
-              );
-            },
-          );
-        },
-      ),
+            ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(right: 16.0, bottom: 16.0),
         child: FloatingActionButton(
