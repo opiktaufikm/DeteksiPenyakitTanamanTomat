@@ -16,7 +16,7 @@ class RegisterPage extends StatelessWidget {
 
   Future<bool> _isUsernameTaken(String username) async {
     final response = await Supabase.instance.client
-        .from('profiles')
+        .from('petani')
         .select('username')
         .eq('username', username)
         .maybeSingle();
@@ -108,10 +108,17 @@ class RegisterPage extends StatelessWidget {
                     if (username.isNotEmpty &&
                         email.isNotEmpty &&
                         password.isNotEmpty) {
+                      final usernameTaken = await _isUsernameTaken(username);
+                      if (usernameTaken) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Username sudah digunakan.")),
+                        );
+                        return;
+                      }
+
                       try {
-                        // 1. Sign up dengan email & password
-                        final response =
-                            await Supabase.instance.client.auth.signUp(
+                        // 1. Sign up dengan Supabase Auth
+                        final response = await Supabase.instance.client.auth.signUp(
                           email: email,
                           password: password,
                         );
@@ -119,43 +126,48 @@ class RegisterPage extends StatelessWidget {
                         final userId = response.user?.id;
                         if (userId == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text("Gagal mendaftarkan pengguna.")),
+                            const SnackBar(content: Text("Gagal mendaftarkan pengguna.")),
                           );
                           return;
                         }
 
-                        // 2. Sekarang update metadata agar Display name terisi
+                        // 2. Update user profile metadata (opsional)
                         await Supabase.instance.client.auth.updateUser(
                           UserAttributes(data: {
                             'full_name': username,
                           }),
                         );
 
-                        // 3. Simpan userId dan navigasi ke HomePage
+                        // 3. Simpan ke tabel petani
+                        await Supabase.instance.client.from('petani').insert({
+                          'id': userId,
+                          'username': username,
+                          'email': email,
+                          'password': password, // ⚠️ Plain text, jangan untuk produksi
+                        });
+
+                        // 4. Simpan userId lokal
                         await _saveUserId(userId);
+
+                        // 5. Navigasi ke HomePage
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(builder: (context) => HomePage()),
                         );
                       } catch (error) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content:
-                                  Text("Gagal mendaftarkan pengguna: $error")),
+                          SnackBar(content: Text("Gagal mendaftar: $error")),
                         );
                       }
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text("Semua field harus diisi.")),
+                        const SnackBar(content: Text("Semua field harus diisi.")),
                       );
                     }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 100, vertical: 15),
+                    padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                     ),

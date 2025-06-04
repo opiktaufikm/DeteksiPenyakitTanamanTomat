@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginPage extends StatelessWidget {
-  final emailController = TextEditingController();
+  final usernameController = TextEditingController();
   final passwordController = TextEditingController();
 
   Future<void> _saveUserId(String userId) async {
@@ -40,9 +40,9 @@ class LoginPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
                 TextField(
-                  controller: emailController,
+                  controller: usernameController,
                   decoration: InputDecoration(
-                    labelText: 'Email',
+                    labelText: 'Username',
                     filled: true,
                     fillColor: const Color.fromARGB(255, 223, 223, 223),
                     border: OutlineInputBorder(
@@ -68,25 +68,28 @@ class LoginPage extends StatelessWidget {
                 const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: () async {
-                    String email = emailController.text.trim();
+                    String username = usernameController.text.trim();
                     String password = passwordController.text.trim();
 
-                    if (email.isNotEmpty && password.isNotEmpty) {
+                    if (username.isNotEmpty && password.isNotEmpty) {
                       try {
-                        final response = await Supabase.instance.client.auth
-                            .signInWithPassword(email: email, password: password);
+                        // Login dengan mencocokkan username dan password
+                        final response = await Supabase.instance.client
+                            .from('petani')
+                            .select()
+                            .eq('username', username)
+                            .eq('password', password) // ⚠️ Hindari plain text di produksi!
+                            .maybeSingle();
 
-                        final user = response.user;
-
-                        if (user != null) {
-                          await _saveUserId(user.id);
+                        if (response != null) {
+                          await _saveUserId(response['id']);
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(builder: (context) => HomePage()),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Login gagal. Pengguna tidak ditemukan.')),
+                            const SnackBar(content: Text('Username atau password salah.')),
                           );
                         }
                       } catch (e) {
@@ -97,7 +100,7 @@ class LoginPage extends StatelessWidget {
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Email dan password tidak boleh kosong.'),
+                          content: Text('Username dan password tidak boleh kosong.'),
                         ),
                       );
                     }

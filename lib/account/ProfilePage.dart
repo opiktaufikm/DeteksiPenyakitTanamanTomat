@@ -11,7 +11,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  String _email = '';
+  final TextEditingController _emailController = TextEditingController();
   bool _isEditing = false;
 
   @override
@@ -24,7 +24,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final user = Supabase.instance.client.auth.currentUser;
 
     if (user != null) {
-      _email = user.email ?? '';
+      _emailController.text = user.email ?? '';
       _nameController.text = user.userMetadata?['full_name'] ?? '';
     }
   }
@@ -76,6 +76,21 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const Text('Email', style: TextStyle(fontSize: 16)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _emailController,
+              enabled: false,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.grey[300],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             const Text('Nama', style: TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
             TextField(

@@ -30,8 +30,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  #firebase_core: ^2.8.0
-  #cloud_firestore: ^4.4.5
   shared_preferences: ^2.0.18
   rename: ^2.1.0
   supabase_flutter: ^1.10.25
